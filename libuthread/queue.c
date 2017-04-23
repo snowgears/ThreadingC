@@ -16,6 +16,7 @@ struct queue {
 	int size;
 };
 
+
 queue_t queue_create(void)
 {
 	queue_t queuePtr = (queue_t) malloc(sizeof(struct queue));
@@ -29,7 +30,7 @@ queue_t queue_create(void)
 int queue_destroy(queue_t queue)
 {
 	if(queue == NULL || queue->size != 0){
-		return -1
+		return -1;
 	}
 
 	free(queue);
@@ -39,7 +40,7 @@ int queue_destroy(queue_t queue)
 int queue_enqueue(queue_t queue, void *data)
 {
 	if(queue == NULL || data == NULL){
-		reurn -1;
+		return -1;
 	}
 	
 	nodePtr newHead = (nodePtr) malloc(sizeof(Node));
@@ -100,10 +101,13 @@ int queue_iterate(queue_t queue, queue_func_t func, void *arg, void **data)
 	int status = 0;
 	void* grabbedData = NULL;
 	
-	while(0 == status){
-		status = func(queue, grabbedData, arg)
+	while(0 == status && curNode != NULL){
+		grabbedData = curNode->data;
+		status = func(queue, grabbedData, arg);
+		curNode = curNode->next;
 	}
-	if(grabbedData != NULL){
+	
+	if(data != NULL && grabbedData != NULL){
 		*data = grabbedData;
 	}
 	
