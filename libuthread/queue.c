@@ -23,7 +23,7 @@ queue_t queue_create(void)
 	queuePtr->head = NULL;
 	queuePtr->tail = NULL;
 	queuePtr->size = 0;
-	
+
 	return queuePtr;
 }
 
@@ -42,7 +42,7 @@ int queue_enqueue(queue_t queue, void *data)
 	if(queue == NULL || data == NULL){
 		return -1;
 	}
-	
+
 	nodePtr newHead = (nodePtr) malloc(sizeof(Node));
 	if(newHead == NULL){
 		return -1;
@@ -50,17 +50,17 @@ int queue_enqueue(queue_t queue, void *data)
 	newHead->data = data;
 	newHead->next = queue->head;
 	newHead->prev = NULL;
-	
+
 	if(queue->head != NULL){
 		queue->head->prev = newHead;
 	}
-	
+
 	if(queue->size == 0){
 		queue->tail = newHead;
 	}
 	queue->head = newHead;
 	queue->size++;
-	
+
 	return 0;
 }
 
@@ -70,11 +70,14 @@ int queue_dequeue(queue_t queue, void **data)
 		return -1;
 	}
 	*data = queue->tail->data;
-	
+
 	// Update tail
 	queue->tail = queue->tail->prev;
-	
+
 	free(queue->tail->next);
+	queue->size--;
+
+	queue->tail->next = NULL;
 	return 0;
 }
 
@@ -83,13 +86,13 @@ int queue_delete(queue_t queue, void *data)
 	if(queue == NULL || data == NULL || queue->tail->data != data){
 		return -1;
 	}
-	
+
 	// Update tail
 	queue->tail = queue->tail->prev;
-	
+
 	free(queue->tail->next);
 	return 0;
-	
+
 }
 
 int queue_iterate(queue_t queue, queue_func_t func, void *arg, void **data)
@@ -100,19 +103,19 @@ int queue_iterate(queue_t queue, queue_func_t func, void *arg, void **data)
 	nodePtr curNode = queue->head;
 	int status = 0;
 	void* grabbedData = NULL;
-	
+
 	while(0 == status && curNode != NULL){
 		grabbedData = curNode->data;
 		status = func(queue, grabbedData, arg);
 		curNode = curNode->next;
 	}
-	
+
 	if(data != NULL && grabbedData != NULL){
 		*data = grabbedData;
 	}
-	
-	
-	
+
+
+
 	return 0;
 }
 
@@ -120,4 +123,3 @@ int queue_length(queue_t queue)
 {
 	return (queue == NULL ? -1 : queue->size);
 }
-
