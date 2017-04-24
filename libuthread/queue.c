@@ -81,7 +81,11 @@ int queue_dequeue(queue_t queue, void **data)
 	}
 	queue->size--;
 
-	queue->tail->next = NULL;
+	// If there is a tail
+	if(queue->tail != NULL){
+		// Set tail's next to null
+		queue->tail->next = NULL;
+	}
 	return 0;
 }
 
@@ -94,7 +98,17 @@ int queue_delete(queue_t queue, void *data)
 	// Update tail
 	queue->tail = queue->tail->prev;
 
-	free(queue->tail->next);
+	// Free old tail
+	if(queue->tail != NULL && queue->tail->next != NULL){
+		free(queue->tail->next);
+	}
+	queue->size--;
+
+	// If there is a tail
+	if(queue->tail != NULL){
+		// Set tail's next to null
+		queue->tail->next = NULL;
+	}
 	return 0;
 
 }

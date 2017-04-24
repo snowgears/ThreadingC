@@ -32,6 +32,10 @@ test_queue
 # Debug files
 *.dSYM/
 *.su
+core
 
 # Project description
 *.html
+
+# Editor files
+.nfs*
