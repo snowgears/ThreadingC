@@ -66,4 +66,22 @@ int main(int argc, char *argv[])
 	/* Find and get the item which is equal to value '5' */
 	queue_iterate(q, find_item, (void*)5, (void**)(&ptr) );
 	assert(*ptr == 5);
+	
+	// Test for null args
+	assert(queue_destroy(NULL) == -1);
+	assert(queue_enqueue(NULL, NULL) == -1);
+	
+	// Can't destroy non-empty queue
+	assert(queue_destroy(q) == -1);
+	
+	// Empty the queue
+	len = queue_length(q);
+	for (i = 0; i < len; i++){
+		queue_dequeue(q, (void**)&ptr);
+	}
+	
+	// Must be empty now
+	assert(queue_length(q) == 0);
+	
+	
 }

@@ -69,12 +69,16 @@ int queue_dequeue(queue_t queue, void **data)
 	if(queue == NULL || data == NULL || queue->size == 0){
 		return -1;
 	}
+	// Grab data
 	*data = queue->tail->data;
 
 	// Update tail
 	queue->tail = queue->tail->prev;
 
-	free(queue->tail->next);
+	// Free old tail
+	if(queue->tail != NULL && queue->tail->next != NULL){
+		free(queue->tail->next);
+	}
 	queue->size--;
 
 	queue->tail->next = NULL;
