@@ -32,3 +32,6 @@ test_queue
 # Debug files
 *.dSYM/
 *.su
+
+# Project description
+*.html
