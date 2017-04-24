@@ -40,15 +40,15 @@ int main(int argc, char *argv[])
 	for (i = 0; i < 10; i++){
 		queue_enqueue(q, &data[i]);
 	}
-
+	// Test len
 	int len = queue_length(q);
 	assert(len == 10);
 
+	// Test dequeue
 	queue_dequeue(q, (void**)&ptr);
 	printf("Dequeued: %d\n", *ptr);
-	// queue_dequeue(q, (void**)&ptr);
-	// printf("Dequeued: %d\n", *ptr);
 
+	// Test len after dequeue
 	len = queue_length(q);
 	assert(len == 9);
 
@@ -77,11 +77,14 @@ int main(int argc, char *argv[])
 	// Empty the queue
 	len = queue_length(q);
 	for (i = 0; i < len; i++){
-		queue_dequeue(q, (void**)&ptr);
+		queue_delete(q, &data[i+1]);
 	}
 	
 	// Must be empty now
 	assert(queue_length(q) == 0);
+	
+	// Test destroy
+	assert(queue_destroy(q) == 0);
 	
 	
 }
