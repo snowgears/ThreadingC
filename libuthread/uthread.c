@@ -40,7 +40,7 @@ uthread_t uthread_self(void)
 
 int uthread_create(uthread_func_t func, void *arg)
 {
-	uthread_t tid = thread_create(uthread_func_t, arg[0]); //TODO , arg[1], arg[2] ...); etc
+	uthread_t tid = thread_count++;
 	thread_control_block* tcb = (thread_control_block*) malloc(sizeof(thread_control_block));
 	uthread_ctx_t* cxt = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
 	
@@ -64,6 +64,7 @@ void uthread_exit(int retval)
 {
 	//end and free current thread context
 	//set next thread context in queue as current context
+
 }
 
 int uthread_join(uthread_t tid, int *retval)
