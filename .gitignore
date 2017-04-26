@@ -28,6 +28,7 @@
 *.x86_64
 *.hex
 test_queue
+uthread_hello
 
 # Debug files
 *.dSYM/
