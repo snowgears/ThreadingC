@@ -14,20 +14,26 @@
 #define STATE_RUNNING 6
 #define STATE_READY 7
 
-queue_t thread_queue;
-uthread_t current_thread_id = 1; //start execution from main thread
-int thread_count = 1; //count the total number of threads in order to assign thread ids ???
 
 typedef struct {
     uthread_t id;
     int state;
     uthread_ctx_t* context; //pretty sure backup registers are contained in context
-	char stack[STACK_SIZE]; //TODO may not be char
+    char stack[STACK_SIZE]; //TODO may not be char
+    int index;
 
 } thread_control_block;
 
+
+// GLOBAL VARS
+int cur_thread_index = 0; 
+queue_t thread_queue;
+int thread_count = 0; //count the total number of threads in order to assign thread ids ??? 
+thread_control_block* TCB_array[512];
+
+
 /* Free all of the memory of a given thread control block */
-void free_thread(struct thread_control_block* tcb)
+void free_thread(thread_control_block* tcb)
 {
         if(tcb == NULL){
                 return;
@@ -39,87 +45,110 @@ void free_thread(struct thread_control_block* tcb)
         free(tcb);
 }
 
-/* Callback function that finds a certain item according to its value */
-static int find_thread(queue_t q, void *data, void *arg)
-{
-        //TODO this will be a function to find a thread in the queue by its id
-        //will return a pointer to the TCB and use queue_iterate to solve
-	thread_control_block *thread = (int*)data;
-	int match = (intptr_t)arg;
-
-	if (*a == match)
-	return 1;
-
-	return 0;
-}
 
 
 void uthread_yield(void)
 {
-	//from what I understand this involves swapping the thread context of current TCB with context of next TCB in the queue
-        //swap contexts of current thread and next active thread in queue
+    //from what I understand this involves swapping the thread context of current TCB with context of next TCB in the queue
+    //swap contexts of current thread and next ready thread in queue
+    if(thread_queue == NULL || queue_length(thread_queue) == 0){
+        return;
+    }
+    
+    // Get the next ready thread
+    thread_control_block* popped;
+    queue_dequeue(thread_queue, popped);
+    
+    // Push current thread to ready queue
+    queue_enqueue(thread_queue, TCB_array[cur_thread_index]);
+    
+    // Context switch
+    int temp_index = cur_thread_index;
+    cur_thread_index = popped->index;
+    uthread_ctx_switch(TCB_array[temp_index]->context , (void*) popped);
 
 }
 
 uthread_t uthread_self(void)
 {
-	return 0;
+    if(thread_count == 0){
+        return 1;
+    }
+    return TCB_array[cur_thread_index]->id;
 }
 
 int uthread_create(uthread_func_t func, void *arg)
 {
-        thread_control_block* currTCB;
+    printf("Here 1\n");
 
-        //if this is the first call to create_thread(), initialze queue and save TCB of main to current TCB
-        if(thread_queue == NULL){
-		thread_queue = (queue_t)queue_create(); //will have a queue of thread control blocks
+    //if this is the first call to create_thread(), initialze queue and save TCB of main to current TCB
+    if(thread_queue == NULL){
+        thread_queue = (queue_t)queue_create(); //will have a queue of thread control blocks
 
-                currTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
-        	uthread_ctx_t* mainCXT = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
-        	currTCB->context = mainCXT;
-        	currTCB->id = thread_count;
-        	currTCB->state = STATE_RUNNING;
-	}
-        //if the queue has been initialized, there is a current running thread in the queue
-        else{
-                //assign currentTCB from the current running thread
+        thread_control_block* currTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
+        uthread_ctx_t* mainCXT = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
+        mainCXT = getcontext();
+        currTCB->context = mainCXT;
+        currTCB->id = thread_count;
+        currTCB->state = STATE_RUNNING;
+        currTCB->index = cur_thread_index;
+        // Add to array
+        TCB_array[cur_thread_index] = currTCB;
+        
+        //increment thread count since main was created
+        thread_count++;
+    }
+    printf("Here 2\n");
+    //initialize a new thread to execute the provided function with the given arguments
+    //increment thread count to accomidate new thread being created
+    thread_count++;
+    thread_control_block* nextTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
+    uthread_ctx_t* cxt = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
 
-        }
+    void* stack = uthread_ctx_alloc_stack(); //not sure if this is necessary
+    int init_failed = uthread_ctx_init(cxt, stack, func, arg);
 
-        //initialize a new thread to execute the provided function with the given arguments
-	uthread_t tid = ++thread_count;
-	thread_control_block* tcb = (thread_control_block*) malloc(sizeof(thread_control_block));
-	uthread_ctx_t* cxt = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
+    if(init_failed == -1){
+         //TODO: the intializattion failed, not sure what to do from here
+    }
 
-	void* stack = uthread_ctx_alloc_stack(); //not sure if this is necessary
-	int init_failed = uthread_ctx_init(cxt, stack, func, arg);
+    printf("Here 3\n");
+    // Set thread control block
+    nextTCB->context = cxt;
+    nextTCB->id = thread_count;
+    nextTCB->state = STATE_READY;
+    nextTCB->index = thread_count;
+    
+    // Add to array
+    TCB_array[thread_count] = nextTCB;
+    
+    // Push to queue
+    queue_enqueue(thread_queue, (void*) nextTCB);
 
-	if(init_failed == -1){
-		 //TODO: the intializattion failed, not sure what to do from here
-	}
+    // context switch [running the next thread]
+    printf("Here 4\n");
+    
+    
 
-	// Set thread control block
-	tcb->context = cxt;
-	tcb->id = tid;
-	tcb->state = STATE_READY;
-
-	queue_enqueue(thread_queue, (void*) tcb);
-
-	// context switch [running the next thread]
-	uthread_ctx_switch(mainCXT, cxt);
-
-	return tid;
+    return tid;
 }
 
 void uthread_exit(int retval)
 {
-	//end and free current thread context
-	//set next thread context in queue as current context
+    //end and free current thread context
+    //set next thread context in queue as current context
 
 }
 
 int uthread_join(uthread_t tid, int *retval)
 {
-	//TODO: PHASE 3
-	return 0;
+    while(1){
+        if(queue_length(thread_queue) == 0){
+            return 0;
+        }
+        uthread_yield();
+        return 0;
+        
+    }
+    return 0;
 }
