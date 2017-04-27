@@ -29,6 +29,7 @@
 *.hex
 test_queue
 uthread_hello
+uthread_yield
 
 # Debug files
 *.dSYM/
