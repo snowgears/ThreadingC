@@ -10,9 +10,11 @@
 
 #define STACK_SIZE  4096
 
+// THREAD STATES
 #define STATE_BLOCKED 5
 #define STATE_RUNNING 6
-#define STATE_READY 7
+#define STATE_READY   7
+#define STATE_ZOMBIE  8
 
 
 typedef struct {
@@ -29,7 +31,7 @@ typedef struct {
 int cur_thread_index = 0;
 queue_t thread_queue;
 int thread_count = 0; //count the total number of threads in order to assign thread ids ???
-thread_control_block* TCB_array[512];
+thread_control_block* TCB_array[512]; // Array to hold non-ready threads
 
 
 /* Free all of the memory of a given thread control block */
@@ -76,29 +78,30 @@ uthread_t uthread_self(void)
     return TCB_array[cur_thread_index]->id;
 }
 
+// Add main thread to the thread array
+void uthread_init_main(void){
+    thread_queue = (queue_t)queue_create(); //will have a queue of thread control blocks
+
+    thread_control_block* mainTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
+    uthread_ctx_t* mainCXT = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
+    //save the context of the main thread
+    getcontext(mainCXT);
+    mainTCB->context = mainCXT;
+    mainTCB->id = thread_count;
+    mainTCB->state = STATE_RUNNING;
+    mainTCB->index = cur_thread_index;
+    // Add to array
+    TCB_array[cur_thread_index] = mainTCB;
+}
+
 int uthread_create(uthread_func_t func, void *arg)
 {
     //if this is the first call to create_thread(), initialze queue and save TCB of main to current TCB
     if(thread_queue == NULL){
-        thread_queue = (queue_t)queue_create(); //will have a queue of thread control blocks
-
-        thread_control_block* mainTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
-        uthread_ctx_t* mainCXT = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
-        //save the context of the main thread
-        getcontext(mainCXT);
-        mainTCB->context = mainCXT;
-        mainTCB->id = thread_count;
-        mainTCB->state = STATE_RUNNING;
-        mainTCB->index = cur_thread_index;
-        // Add to array
-        TCB_array[cur_thread_index] = mainTCB;
-
-        //increment thread count since main was created
-        thread_count++;
+        uthread_init_main();
     }
-    else{
-        thread_count++;
-    }
+
+    thread_count++;
     
     //initialize a new thread to execute the provided function with the given arguments
     thread_control_block* nextTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
@@ -129,8 +132,11 @@ int uthread_create(uthread_func_t func, void *arg)
 
 void uthread_exit(int retval)
 {
-    //end and free current thread context
-    //set next thread context in queue as current context
+    // Set thread to zombie (not runnig anymore)
+    TCB_array[cur_thread_index]->state = STATE_ZOMBIE;
+    
+    // yield to allow next ready thread to run
+    uthread_yield();
 
 }
 
