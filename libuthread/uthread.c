@@ -18,12 +18,12 @@
 
 
 typedef struct {
-    uthread_t id;
-    int state;
-    uthread_ctx_t* context; //pretty sure backup registers are contained in context
-    char stack[STACK_SIZE]; //TODO may not be char
-    int index;
-
+    uthread_t id;                        //the unqiue id of the TCB
+    int state;                           //the state of the TCB
+    uthread_ctx_t* context;              //contains information about function, arguments, and stack
+    int index;                           //index of struct in the TCB_array (for retreiving later)
+    struct thread_control_block* joined_thread; //the joined TCB if there is one
+    int* ret_ptr;                        //the return value of the thread
 } thread_control_block;
 
 
@@ -61,12 +61,18 @@ void uthread_yield(void)
     thread_control_block* popped = NULL;
     queue_dequeue(thread_queue, (void**)&popped);
 
-    // Push current thread to ready queue
-    queue_enqueue(thread_queue, TCB_array[cur_thread_index]);
+    //only enqueue current thread again if its state is RUNNING
+    if( TCB_array[cur_thread_index]->state == STATE_RUNNING ){
+             //since current thread will no longer be running, set to ready state in queue
+             TCB_array[cur_thread_index]->state = STATE_READY;
+             // Push current thread to ready queue
+             queue_enqueue(thread_queue, TCB_array[cur_thread_index]);
+    }
 
     // context switch [running the next thread]
     int temp_index = cur_thread_index;
     cur_thread_index = popped->index;
+    popped->state = STATE_RUNNING;
     uthread_ctx_switch(TCB_array[temp_index]->context, (void*) popped->context);
 }
 
@@ -102,7 +108,7 @@ int uthread_create(uthread_func_t func, void *arg)
     }
 
     thread_count++;
-    
+
     //initialize a new thread to execute the provided function with the given arguments
     thread_control_block* nextTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
     uthread_ctx_t* cxt = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
@@ -134,7 +140,12 @@ void uthread_exit(int retval)
 {
     // Set thread to zombie (not runnig anymore)
     TCB_array[cur_thread_index]->state = STATE_ZOMBIE;
-    
+
+    if(TCB_array[cur_thread_index]->joined_thread != NULL){
+            ((thread_control_block*)(TCB_array[cur_thread_index]->joined_thread))->state = STATE_READY;
+            queue_enqueue(thread_queue, (void*) TCB_array[cur_thread_index]->joined_thread);
+    }
+
     // yield to allow next ready thread to run
     uthread_yield();
 
@@ -142,11 +153,21 @@ void uthread_exit(int retval)
 
 int uthread_join(uthread_t tid, int *retval)
 {
-    while(1){
-        if(queue_length(thread_queue) == 0){
-            return 0;
+        if(tid <= 0                                //thread provided is main thread or negative
+                || tid == cur_thread_index                 //thread being joined is already the current thread
+                || tid > thread_count                      //thread provided does not exist
+                || TCB_array[tid]->joined_thread != NULL){ //thread is already joined
+                return -1;
         }
-        uthread_yield();
-    }
-    return 0;
+
+
+        (thread_control_block*)TCB_array[tid]->joined_thread = (thread_control_block*)TCB_array[cur_thread_index];
+        TCB_array[tid]->ret_ptr = retval;
+
+
+        if(TCB_array[tid]->state != STATE_ZOMBIE){
+                TCB_array[cur_thread_index]->state = STATE_BLOCKED;
+                uthread_yield();
+        }
+        return 0;
 }
