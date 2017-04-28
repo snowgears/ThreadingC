@@ -62,7 +62,7 @@ void uthread_yield(void)
     // Push current thread to ready queue
     queue_enqueue(thread_queue, TCB_array[cur_thread_index]);
 
-    // Context switch
+    // context switch [running the next thread]
     int temp_index = cur_thread_index;
     cur_thread_index = popped->index;
     uthread_ctx_switch(TCB_array[temp_index]->context, (void*) popped->context);
@@ -96,14 +96,15 @@ int uthread_create(uthread_func_t func, void *arg)
         //increment thread count since main was created
         thread_count++;
     }
-
+    else{
+        thread_count++;
+    }
+    
     //initialize a new thread to execute the provided function with the given arguments
-    //increment thread count to accomidate new thread being created
-    thread_count++;
     thread_control_block* nextTCB = (thread_control_block*) malloc(sizeof(thread_control_block));
     uthread_ctx_t* cxt = (uthread_ctx_t*) malloc(sizeof(uthread_ctx_t));
 
-    void* stack = uthread_ctx_alloc_stack(); //not sure if this is necessary
+    void* stack = uthread_ctx_alloc_stack();
     int init_failed = uthread_ctx_init(cxt, stack, func, arg);
 
     if(init_failed == -1){
@@ -123,8 +124,6 @@ int uthread_create(uthread_func_t func, void *arg)
     // Push to queue
     queue_enqueue(thread_queue, (void*) nextTCB);
 
-    // context switch [running the next thread]
-
     return nextTCB->id;
 }
 
@@ -142,8 +141,6 @@ int uthread_join(uthread_t tid, int *retval)
             return 0;
         }
         uthread_yield();
-        return 0;
-
     }
     return 0;
 }
