@@ -1,5 +1,7 @@
 make_lib: libuthread/*
 	cd libuthread && make
+uthread_join: uthread_join.c libuthread/libuthread.a
+		gcc uthread_join.c libuthread/libuthread.a -o uthread_join -Wall -Werror -g -l uthread -L ./libuthread
 uthread_yield: uthread_yield.c libuthread/libuthread.a
 		gcc uthread_yield.c libuthread/libuthread.a -o uthread_yield -Wall -Werror -g -l uthread -L ./libuthread
 uthread_hello: uthread_hello.c libuthread/libuthread.a
