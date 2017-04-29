@@ -17,7 +17,7 @@
 #define STATE_ZOMBIE  8
 
 
-typedef struct {
+typedef struct thread_control_block{
     uthread_t id;                        //the unqiue id of the TCB
     int state;                           //the state of the TCB
     uthread_ctx_t* context;              //contains information about function, arguments, and stack
@@ -161,7 +161,7 @@ int uthread_join(uthread_t tid, int *retval)
         }
 
 
-        (thread_control_block*)TCB_array[tid]->joined_thread = (thread_control_block*)TCB_array[cur_thread_index];
+        TCB_array[tid]->joined_thread = TCB_array[cur_thread_index];
         TCB_array[tid]->ret_ptr = retval;
 
 
