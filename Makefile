@@ -11,4 +11,4 @@ uthread_hello: uthread_hello.c libuthread/libuthread.a
 test_queue: test_queue.c libuthread/queue.c
 	gcc test_queue.c libuthread/queue.c -o test_queue -Wall -Werror -g
 clean:
-	rm -rf *.o test_queue *.out core uthread_hello
+	rm -rf *.o test_queue *.out core uthread_hello test_preempt uthread_yield

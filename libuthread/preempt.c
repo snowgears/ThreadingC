@@ -19,12 +19,13 @@ struct itimerval timerval;
 struct sigaction s_action;
 
 int is_enabled;
-
+volatile short hit = 0;
 
 
 // Signal hander fn
 void timer_handler(int signum){
-    printf("I am the timer handler\n");
+    hit = 1;
+    //printf("I am the timer handler\n");
     return;
 }
 

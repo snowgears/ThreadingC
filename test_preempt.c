@@ -10,6 +10,8 @@
 #include "libuthread/uthread.h"
 #include "libuthread/preempt.h"
 
+extern volatile short hit;
+
 // Prints str
 int thread2(char* str)
 {
@@ -36,6 +38,10 @@ int main(void)
     int child1_ret;
 	uthread_join(child1, &child1_ret);
     printf("Main is done waiting for thread1\n");
-
+    
+    while(hit == 0){
+        printf("hit: %d\n", hit);
+    }
+    printf("hit: %d\n", hit);
 	return 0;
 }
