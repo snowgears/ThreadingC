@@ -1,6 +1,6 @@
 /*
  * Preempt test
- * 
+ *
  */
 
 #include <stdio.h>
@@ -8,6 +8,7 @@
 #include <unistd.h> // For sleep
 
 #include "libuthread/uthread.h"
+#include "libuthread/preempt.h"
 
 // Prints str
 int thread2(char* str)
@@ -28,6 +29,9 @@ int thread1(void* arg)
 
 int main(void)
 {
+        preempt_enable();
+        preempt_start();
+
     uthread_t child1 = uthread_create(thread1, NULL);
     int child1_ret;
 	uthread_join(child1, &child1_ret);

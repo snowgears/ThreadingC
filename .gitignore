@@ -31,6 +31,7 @@ test_queue
 uthread_hello
 uthread_yield
 uthread_join
+test_preempt
 
 # Debug files
 *.dSYM/
