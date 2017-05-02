@@ -10,7 +10,6 @@
 #include "libuthread/uthread.h"
 #include "libuthread/preempt.h"
 
-extern volatile short hit;
 volatile short thread2_hit =0;
 volatile short thread3_hit =0;
 
@@ -28,6 +27,7 @@ int thread2(char* str)
     
     // Create thread3
     uthread_create( (int(*)(void*))thread3, NULL);
+    preempt_disable();
     return 0;
 }
 
@@ -35,6 +35,7 @@ int thread2(char* str)
 int thread1(void* arg)
 {
     uthread_create( (int(*)(void*))thread2, "I am thread2");
+    preempt_disable();
     int x;
     for(x =0; x< 99999999; x++){
         if(thread2_hit == 1){
@@ -54,10 +55,10 @@ int thread1(void* arg)
 
 int main(void)
 {
-        preempt_enable();
-        preempt_start();
+    preempt_start();
 
     uthread_t child1 = uthread_create(thread1, NULL);
+    preempt_disable();
     int child1_ret;
     uthread_join(child1, &child1_ret);
     printf("Main is done waiting for thread1\n");
