@@ -25,7 +25,9 @@ volatile short hit = 0;
 // Signal hander fn
 void timer_handler(int signum){
     hit = 1;
-    //printf("I am the timer handler\n");
+    
+    // Forcibly make thread yield
+    uthread_yield();
     return;
 }
 
