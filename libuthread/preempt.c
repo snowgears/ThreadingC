@@ -7,77 +7,69 @@
 #include "uthread.h"
 
 
-// Define the timer interval
-struct timeval interval;
 
-
-// Define timer val
-struct itimerval timerval;
-
-
-// Define sigaction to perform on timer alarm
-struct sigaction sig_action;
 
 // Define signal set to block on preempt_disable
-sigset_t sig_set;
-
+// sigset_t sig_set;
+//int is_enabled = 0; //THIS IS NOT ALLOWED> PROFESSOR SAID WONT GET POINTS FOR IMPLEMENTATION IF USED
 
 // Signal hander fn
 void timer_handler(int signum){
-    // Forcibly make thread yield
-    uthread_yield();
-    return;
+    //if(is_enabled == 1){
+        // Forcibly make thread yield
+        uthread_yield();
+    //}
 }
 
-// Initialize vars
-void preempt_init(){
-    // TIMER
-    
-    // Set timer interval
-    interval.tv_sec = (time_t) 0;
-    interval.tv_usec = (long int) 10000; // 10,000 μs = 1/100 sec
+void preempt_disable(void){
+    sigset_t sig_set;
+    sigemptyset(&sig_set);
+    sigaddset(&sig_set, SIGVTALRM);
+    sigprocmask (SIG_BLOCK, &sig_set, NULL);
+    //is_enabled = 0;
+
+    kill(0,SIGVTALRM); //test that the signal to kill is blocked (WORKS SO SIGNAL IS BEING BLOCKED)
+}
+
+void preempt_enable(void){
+    sigset_t sig_set;
+    sigemptyset(&sig_set);
+    sigaddset(&sig_set, SIGVTALRM);
+    sigprocmask (SIG_UNBLOCK, &sig_set, NULL);
+    //is_enabled = 1;
+}
+
+void preempt_start(void){
+    // Define timer val
+    struct itimerval timerval;
+    // Define sigaction to perform on timer alarm
+    struct sigaction sig_action;
+
 
     // Set timer val
-    timerval.it_interval = interval;
-    timerval.it_value = interval;
+    timerval.it_interval.tv_sec = (time_t) 0;
+    timerval.it_interval.tv_usec = (long int) 10000; // 10,000 μs = 1/100 sec
+
+    timerval.it_value.tv_sec = (time_t) 0;
+    timerval.it_value.tv_usec = (long int) 10000; // 10,000 μs = 1/100 sec
 
     // Set sigaction
     sig_action.sa_handler = timer_handler;
     //sig_action.sa_mask = 0;
-    sig_action.sa_flags = 0;
-    
-    
-    
-    // ENABLE/DISABLE
-    
-    // set signal set to be empty
-    sigemptyset(&sig_set);
-    
-    // Add SIGVTALRM to the set of signals to ignore on disable
-    sigaddset(&sig_set, SIGVTALRM);
-    
-}
+    sig_action.sa_flags = SA_RESTART;
 
-
-
-void preempt_disable(void){
-    sigprocmask (SIG_BLOCK, &sig_set, NULL);
-}
-
-void preempt_enable(void){
-    sigprocmask (SIG_UNBLOCK, &sig_set, NULL);
-}
-
-void preempt_start(void){
-    // Initialize all vars
-    preempt_init();
-    preempt_enable();
+    sigemptyset(&sig_action.sa_mask);
 
 
     // Register the signal handler
-    sigaction (SIGVTALRM, &sig_action, NULL);
-
+    if(sigaction (SIGVTALRM, &sig_action, NULL)){
+            printf("Sigaction failed.\n");
+            exit(1);
+    }
 
     // Start the timer 100Hz
-    setitimer(ITIMER_VIRTUAL , &timerval , NULL);
+    if(setitimer(ITIMER_VIRTUAL, &timerval , NULL)){
+            printf("Sig timer failed.\n");
+            exit(1);
+    }
 }

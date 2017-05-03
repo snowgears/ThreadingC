@@ -64,7 +64,7 @@ void uthread_yield(void)
     //only enqueue current thread again if its state is RUNNING
     if( TCB_array[cur_thread_index]->state == STATE_RUNNING ){
              //since current thread will no longer be running, set to ready state in queue
-             TCB_array[cur_thread_index]->state = STATE_READY;
+             TCB_array[cur_thread_index]->state = STATE_READY; //TODO this might have to be changed to STATE_BLOCKED???
              // Push current thread to ready queue
              queue_enqueue(thread_queue, TCB_array[cur_thread_index]);
     }
