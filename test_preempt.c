@@ -22,20 +22,23 @@ int thread3(void* arg){
 // Prints str
 int thread2(char* str)
 {
+    preempt_disable();
     thread2_hit = 1;
     printf("%s\n", str);
     
     // Create thread3
     uthread_create( (int(*)(void*))thread3, NULL);
-    preempt_disable();
     return 0;
 }
 
-// Sleeps for 3 sec
+
 int thread1(void* arg)
 {
-    uthread_create( (int(*)(void*))thread2, "I am thread2");
     preempt_disable();
+    uthread_create( (int(*)(void*))thread2, "I am thread2");
+    
+    // Allow time for timer to go off
+    // and test if preemption yields
     int x;
     for(x =0; x< 99999999; x++){
         if(thread2_hit == 1){
@@ -63,9 +66,6 @@ int main(void)
     uthread_join(child1, &child1_ret);
     printf("Main is done waiting for thread1\n");
     
-    // while(hit == 0){
-    //     printf("hit: %d\n", hit);
-    // }
-    // printf("hit: %d\n", hit);
+
     return 0;
 }

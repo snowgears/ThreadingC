@@ -3,47 +3,31 @@
 #include <sys/time.h>  // For the timer
 #include <signal.h>    // For signal handler
 
-#include "preempt.h"
-#include "uthread.h"
-
-
-
-
-// Define signal set to block on preempt_disable
-// sigset_t sig_set;
-//int is_enabled = 0; //THIS IS NOT ALLOWED> PROFESSOR SAID WONT GET POINTS FOR IMPLEMENTATION IF USED
 
 // Signal hander fn
-void timer_handler(int signum){
-    //if(is_enabled == 1){
-        // Forcibly make thread yield
-        uthread_yield();
-    //}
+void handler(int signum){
+    printf("timer goes off\n");
 }
 
-void preempt_disable(void){
+void disable_sig(void){
     sigset_t sig_set;
     sigemptyset(&sig_set);
     sigaddset(&sig_set, SIGVTALRM);
     if(sigprocmask (SIG_BLOCK, &sig_set, NULL) != 0){
         printf("disable failed\n");
     }
-    //is_enabled = 0;
-
-    //kill(0,SIGVTALRM); //test that the signal to kill is blocked (WORKS SO SIGNAL IS BEING BLOCKED)
 }
 
-void preempt_enable(void){
-    sigset_t sig_set2;
-    sigemptyset(&sig_set2);
-    sigaddset(&sig_set2, SIGVTALRM);
-    if(sigprocmask (SIG_UNBLOCK, &sig_set2, NULL) != 0){
+void enable_sig(void){
+    sigset_t sig_set;
+    sigemptyset(&sig_set);
+    sigaddset(&sig_set, SIGVTALRM);
+    if(sigprocmask (SIG_UNBLOCK, &sig_set, NULL) != 0){
         printf("enable failed\n");
     }
-    //is_enabled = 1;
 }
 
-void preempt_start(void){
+void setup(void){
     // Define timer val
     struct itimerval timerval;
     // Define sigaction to perform on timer alarm
@@ -58,7 +42,7 @@ void preempt_start(void){
     timerval.it_value.tv_usec = (long int) 10000; // 10,000 μs = 1/100 sec
 
     // Set sigaction
-    sig_action.sa_handler = timer_handler;
+    sig_action.sa_handler = handler;
     //sig_action.sa_mask = 0;
     sig_action.sa_flags = SA_RESTART;
 
@@ -76,4 +60,15 @@ void preempt_start(void){
             printf("Sig timer failed.\n");
             exit(1);
     }
+}
+
+int main(void){
+    setup();
+    enable_sig();
+    // Remove disable_sig to see the timer prints
+    disable_sig();
+    while(1){
+        // Wait for sig handler
+    }
+    
 }
