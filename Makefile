@@ -1,14 +1,22 @@
-make_lib: libuthread/*
+targets := libuthread.a test_preempt uthread_join uthread_yield uthread_hello test_queue
+lib := libuthread/libuthread.a
+linklib := -l uthread -L ./libuthread
+CC := gcc
+CFLAGS := -Wall -Werror -g
+
+all: $(targets)
+
+libuthread.a: libuthread/*
 	cd libuthread && make
-test_preempt: test_preempt.c libuthread/libuthread.a
-		gcc test_preempt.c libuthread/libuthread.a -o test_preempt -Wall -Werror -g -l uthread -L ./libuthread
-uthread_join: uthread_join.c libuthread/libuthread.a
-		gcc uthread_join.c libuthread/libuthread.a -o uthread_join -Wall -Werror -g -l uthread -L ./libuthread
-uthread_yield: uthread_yield.c libuthread/libuthread.a
-		gcc uthread_yield.c libuthread/libuthread.a -o uthread_yield -Wall -Werror -g -l uthread -L ./libuthread
-uthread_hello: uthread_hello.c libuthread/libuthread.a
-	gcc uthread_hello.c libuthread/queue.c libuthread/uthread.c -o uthread_hello -Wall -Werror -g -l uthread -L ./libuthread
+test_preempt: test_preempt.c $(lib)
+	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
+uthread_join: uthread_join.c $(lib)
+	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
+uthread_yield: uthread_yield.c $(lib)
+	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
+uthread_hello: uthread_hello.c $(lib)
+	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
 test_queue: test_queue.c libuthread/queue.c
-	gcc test_queue.c libuthread/queue.c -o test_queue -Wall -Werror -g
+	$(CC) $^ -o test_queue $(CFLAGS)
 clean:
-	rm -rf *.o test_queue *.out core uthread_hello test_preempt uthread_yield
+	rm -rf *.o *.out core $(targets) && cd libuthread && make clean
