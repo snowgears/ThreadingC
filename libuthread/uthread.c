@@ -8,8 +8,6 @@
 #include "queue.h"
 #include "uthread.h"
 
-#define STACK_SIZE  4096
-
 // THREAD STATES
 #define STATE_BLOCKED 5
 #define STATE_RUNNING 6
@@ -48,7 +46,6 @@ void free_thread(thread_control_block* tcb)
 }
 
 
-
 void uthread_yield(void)
 {
     //from what I understand this involves swapping the thread context of current TCB with context of next TCB in the queue
@@ -79,7 +76,7 @@ void uthread_yield(void)
 uthread_t uthread_self(void)
 {
     if(thread_count == 0){
-        return 1;
+        return 0;
     }
     return TCB_array[cur_thread_index]->id;
 }
