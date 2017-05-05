@@ -1,22 +1,70 @@
-targets := libuthread.a test_preempt uthread_join uthread_yield uthread_hello test_queue
-lib := libuthread/libuthread.a
-linklib := -l uthread -L ./libuthread
-CC := gcc
-CFLAGS := -Wall -Werror -g
+# Target programs
+programs := test_preempt.x uthread_join.x uthread_yield.x uthread_hello.x test_queue.x
 
-all: $(targets)
+# User-level thread library
+UTHREADLIB := libuthread
+UTHREADPATH := ${UTHREADLIB}
+libuthread := $(UTHREADPATH)/${UTHREADLIB}.a
 
-libuthread.a: libuthread/*
-	cd libuthread && make
-test_preempt: test_preempt.c $(lib)
-	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
-uthread_join: uthread_join.c $(lib)
-	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
-uthread_yield: uthread_yield.c $(lib)
-	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
-uthread_hello: uthread_hello.c $(lib)
-	$(CC) $^ -o $@ $(CFLAGS) $(linklib)
-test_queue: test_queue.c libuthread/queue.c
-	$(CC) $^ -o test_queue $(CFLAGS)
+# Default rule
+all: $(libuthread) $(programs)
+
+# Avoid builtin rules and variables
+MAKEFLAGS += -rR
+
+# Don't print the commands unless explicitely requested with `make V=1`
+ifneq ($(V),1)
+Q = @
+V = 0
+endif
+
+# Define compilation toolchain
+CC	= gcc
+
+# General gcc options
+CFLAGS	:= -Wall -Werror
+CFLAGS	+= -pipe
+## Debug flag
+ifneq ($(D),1)
+CFLAGS	+= -O2
+else
+CFLAGS	+= -O0
+CFLAGS	+= -g
+endif
+
+# Include path
+INCLUDE := -I$(UTHREADPATH)
+
+# Generate dependencies
+DEPFLAGS = -MMD -MF $(@:.o=.d)
+
+# Application objects to compile (.o files)
+objs := $(patsubst %.x,%.o,$(programs))
+
+# Include dependencies (.d files)
+deps := $(patsubst %.o,%.d,$(objs))
+-include $(deps)
+
+# Rule for libuthread.a
+$(libuthread):
+	@echo "MAKE	$@"
+	$(Q)$(MAKE) V=$(V) D=$(D) -C $(UTHREADPATH)
+
+# Generic rule for linking final applications
+%.x: %.o $(libuthread)
+	@echo "LD	$@"
+	$(Q)$(CC) $(CFLAGS) -o $@ $< -L$(UTHREADPATH) -luthread
+
+# Generic rule for compiling objects
+%.o: %.c
+	@echo "CC	$@"
+	$(Q)$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $< $(DEPFLAGS)
+
+# Cleaning rule
 clean:
-	rm -rf *.o *.out core $(targets) && cd libuthread && make clean
+	@echo "CLEAN	$(shell pwd)"
+	$(Q)$(MAKE) V=$(V) D=$(D) -C $(UTHREADPATH) clean
+	$(Q)rm -rf $(objs) $(deps) $(programs)
+
+.PHONY: clean $(libuthread)
+

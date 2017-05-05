@@ -152,6 +152,45 @@ if(sigprocmask (SIG_BLOCK, &sig_set, NULL) != 0){
 }
 ```  
 
+## Test Files
+
+#### test_queue.c
+This test file is supposed to test the queue implementation.
+
+#### uthread_hello.c
+This test file is supposed to test the basic thread creation implementation.
+
+#### uthread_yield.c
+This test file is supposed to test the yield implementation.
+
+#### uthread_join.c
+This test file is supposed to test the join implementation.
+
+#### test_preempt.c
+This test file is supposed to test the preemption and disable preemption  
+implementation. As the file is, it will test that disable works. So to test if  
+preemption works enabled you have to comment out lines 25, 37, and 64. Once they  
+are commented out you have to remake. When it is run, the main thread will wait  
+for thread1 to finish. Thread 1 will run the huge loop and be preempted and run  
+thread2. This loop ensures that the timer goes off during thread1 so that we know  
+thread2 should run next. Then after thread2 terminates, thread1 will continue its  
+huge loop and be preemped again and run thread3. This happens just as expected.  
+Then thread3 exits and thread1 continues, thread1 exits, and main thread continues  
+and exits. This works fine.
+
+Testing for disable is a bit more interesting. Make sure all the lines mentioned  
+above are uncommented. Then recompile and run. The main thread will create and  
+wait for thread1 to finish. Thread1 starts and enters the huge loop. Thread1 will  
+NOT be preemped in the loop and will terminate. When there is a context switch to  
+thread2, enable is called in context.c (we cannot change that) and it will be  
+enabled. Then all the alarms that were blocked will be caught and call yield. This  
+means that thread2 will yield and the main thread will continue. Then the main  
+thread will terminate and thread2 and 3 never run. This is intended behavior as it  
+is the user's job to make sure threads actually run. Notice that the preemption   
+that previously happened in the loop doesn't happen this time. This proves that  
+the preemption was disabled. Also note that it will always be enabled on context  
+switch.
+
 ## Sources Used:
 
 * [GNU: System Contexts process](https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts)

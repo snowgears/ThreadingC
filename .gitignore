@@ -3,6 +3,7 @@
 *.ko
 *.obj
 *.elf
+*.d
 
 # Precompiled Headers
 *.gch
@@ -32,6 +33,7 @@ uthread_hello
 uthread_yield
 uthread_join
 test_preempt
+*.x
 
 # Debug files
 *.dSYM/
