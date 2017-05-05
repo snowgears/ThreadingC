@@ -155,16 +155,20 @@ if(sigprocmask (SIG_BLOCK, &sig_set, NULL) != 0){
 ## Test Files
 
 #### test_queue.c
-This test file is supposed to test the queue implementation.
-
-#### uthread_hello.c
-This test file is supposed to test the basic thread creation implementation.
+This test file simply tests our queue implementation by queueing and dequeueing  
+from the queue and then asserting that the changes are correct.  
 
 #### uthread_yield.c
-This test file is supposed to test the yield implementation.
+This test file tests if the yielding of threads works correctly. It calls yield  
+every time a new thread is created so everything is enqueued as it is created.  
+This allowed us to see that yielding threads would run the next thread in the  
+queue and allow execution of each one to finish as it is supposed to.  
 
 #### uthread_join.c
-This test file is supposed to test the join implementation.
+This test file simply tests that joining threads will allow for them to yeild and  
+wait for the return value in order to store it. This particular file joins the  
+main thread with thread 1, which in turn creates a thread 2. Main then finishes  
+last as it yields and stores the result of thread 1 within its control block.  
 
 #### test_preempt.c
 This test file is supposed to test the preemption and disable preemption  
